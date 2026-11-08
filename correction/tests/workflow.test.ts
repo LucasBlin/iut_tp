@@ -1,0 +1,10 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { calculateBudget } from '../src/budget.js';
+import { requestSchema } from '../src/schema.js';
+import { travelWorkflow } from '../src/workflow.js';
+const request = requestSchema.parse({destination:'Paris', budget:500, days:2, transport:800, restaurants:false, mode:'demo'});
+test('transport supérieur au budget : aucun jour abordable', () => { const r=calculateBudget(request,150); assert.equal(r.total,1100); assert.equal(r.margin,-600); assert.equal(r.maxDays,0); assert.equal(r.feasible,false); });
+test('budget exactement suffisant', () => {const r=calculateBudget({...request,budget:1100},150); assert.equal(r.feasible,true); assert.equal(r.margin,0); assert.equal(r.maxDays,2); });
+test('validation des données de voyage', () => {assert.equal(requestSchema.safeParse({...request,days:0}).success,false); assert.equal(requestSchema.safeParse({...request,budget:0}).success,false);});
+test('workflow démo sans clé : budget, critique et révision cohérents', async () => {const run=await travelWorkflow.createRun(); const r=await run.start({inputData:request}); assert.equal(r.status,'success'); if(r.status !== 'success') return; assert.equal(r.result.budgetResult.feasible,false); assert.match(r.result.itinerary,/Budget insuffisant/); assert.equal(r.result.research.sources.length,3); assert.ok(r.result.critique.length > 0); assert.ok(r.result.revisedItinerary.length > 0); assert.equal(r.result.llmCalls, 0);});
