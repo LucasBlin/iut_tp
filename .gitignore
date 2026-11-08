@@ -19,3 +19,10 @@ ENV/
 *.swo
 *~
 
+node_modules/
+.env
+
+# Next.js
+.next/
+next-env.d.ts
+*.tsbuildinfo
